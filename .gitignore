@@ -1,1 +1,42 @@
+# Android
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+bin/
+gen/
+out/
+.gradle/
+build/
+*.lock
 
+# Keystore files (if any)
+*.jks
+*.keystore
+
+# OSX
+.DS_Store
+
+# Windows
+Thumbs.db
+*.exe
+
+# Intellij
+*.iml
+.idea/
