@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Downloader</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .sub {
+            text-align: center;
+            color: #666;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .status {
+            margin-top: 16px;
+            padding: 12px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .info {
+            margin-top: 20px;
+            padding: 12px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #1976d2;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Video Downloader</h1>
+        <div class="sub">Working Prototype</div>
+        
+        <input type="text" id="urlInput" placeholder="Enter website URL...">
+        <button onclick="loadWebsite()">🌐 Load Website</button>
+        
+        <div class="status" id="statusMsg">Ready</div>
+        
+        <div class="info">
+            ✅ App is working!<br>
+            Next: Video detection coming soon
+        </div>
+    </div>
+    
+    <script>
+        function loadWebsite() {
+            var url = document.getElementById('urlInput').value;
+            var status = document.getElementById('statusMsg');
+            
+            if (!url) {
+                status.innerHTML = '❌ Please enter a URL';
+                return;
+            }
+            
+            var finalUrl = url.startsWith('http') ? url : 'https://' + url;
+            status.innerHTML = '🔍 Opening: ' + finalUrl;
+            
+            if (window.Android && window.Android.loadUrl) {
+                window.Android.loadUrl(finalUrl);
+            } else {
+                status.innerHTML = '⚠️ Opening in browser: ' + finalUrl;
+                window.open(finalUrl, '_blank');
+            }
+        }
+        
+        console.log('HTML loaded successfully');
+    </script>
+</body>
+      </html>
