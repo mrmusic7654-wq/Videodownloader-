@@ -1,14 +1,14 @@
-name: Android Debug Build
+name: Build APK
 
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:  # Allows manual trigger
+  workflow_dispatch:
 
 jobs:
-  debug-build:
+  build:
     runs-on: ubuntu-latest
     
     steps:
@@ -24,298 +24,20 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
     
-    - name: 📁 List all project files
+    - name: Create gradle wrapper
       run: |
-        echo "========================================="
-        echo "📁 PROJECT STRUCTURE"
-        echo "========================================="
-        find . -type f \( -name "*.kt" -o -name "*.xml" -o -name "*.gradle*" -o -name "*.properties" \) | sort
-        echo ""
-        echo "========================================="
-        echo "📁 CHECKING CRITICAL FILES"
-        echo "========================================="
-        
-        # Check for critical files
-        FILES=(
-          "app/build.gradle.kts"
-          "build.gradle.kts"
-          "settings.gradle.kts"
-          "gradle.properties"
-          "app/src/main/AndroidManifest.xml"
-          "app/src/main/java/com/example/videodownloader/MainActivity.kt"
-          "app/src/main/res/values/strings.xml"
-          "app/src/main/res/values/colors.xml"
-          "app/src/main/res/values/themes.xml"
-        )
-        
-        for file in "${FILES[@]}"; do
-          if [ -f "$file" ]; then
-            echo "✅ $file exists"
-          else
-            echo "❌ $file MISSING"
-          fi
-        done
+        mkdir -p gradle/wrapper
+        echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.2-bin.zip" > gradle/wrapper/gradle-wrapper.properties
+        curl -L -o gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/v8.2.0/gradle/wrapper/gradle-wrapper.jar
+        echo '#!/bin/sh' > gradlew
+        echo 'exec java -cp gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain "$@"' >> gradlew
+        chmod +x gradlew
     
-    - name: 🔍 Check Kotlin files syntax
-      run: |
-        echo "========================================="
-        echo "🔍 CHECKING KOTLIN FILES"
-        echo "========================================="
-        find app/src -name "*.kt" -type f | while read file; do
-          echo "Checking: $file"
-          # Check for common Kotlin errors
-          if grep -q "class MainActivity" "$file"; then
-            echo "  ✅ MainActivity class found"
-          fi
-          if grep -q "onCreate" "$file"; then
-            echo "  ✅ onCreate method found"
-          fi
-          # Check for missing imports
-          if grep -q "import android.os.Bundle" "$file"; then
-            echo "  ✅ Bundle import present"
-          else
-            echo "  ⚠️  Missing android.os.Bundle import"
-          fi
-        done
-    
-    - name: 🔍 Check XML files syntax
-      run: |
-        echo "========================================="
-        echo "🔍 CHECKING XML FILES"
-        echo "========================================="
-        find app/src/main/res -name "*.xml" -type f | while read file; do
-          echo "Checking: $file"
-          # Validate XML
-          if xmllint --noout "$file" 2>/dev/null; then
-            echo "  ✅ XML is valid"
-          else
-            echo "  ❌ XML has errors:"
-            xmllint --noout "$file" 2>&1 | head -5
-          fi
-        done
-    
-    - name: 🔍 Check AndroidManifest.xml
-      run: |
-        echo "========================================="
-        echo "🔍 CHECKING ANDROIDMANIFEST.XML"
-        echo "========================================="
-        if [ -f "app/src/main/AndroidManifest.xml" ]; then
-          echo "Content of AndroidManifest.xml:"
-          cat app/src/main/AndroidManifest.xml
-          echo ""
-          
-          # Validate required elements
-          if grep -q "<application" app/src/main/AndroidManifest.xml; then
-            echo "✅ <application> tag found"
-          else
-            echo "❌ Missing <application> tag"
-          fi
-          
-          if grep -q "<activity" app/src/main/AndroidManifest.xml; then
-            echo "✅ <activity> tag found"
-          else
-            echo "❌ Missing <activity> tag"
-          fi
-          
-          if grep -q ".MainActivity" app/src/main/AndroidManifest.xml; then
-            echo "✅ MainActivity declared"
-          else
-            echo "❌ MainActivity not declared"
-          fi
-        else
-          echo "❌ AndroidManifest.xml is MISSING!"
-        fi
-    
-    - name: 🔍 Check Gradle files
-      run: |
-        echo "========================================="
-        echo "🔍 CHECKING GRADLE FILES"
-        echo "========================================="
-        
-        # Check app/build.gradle.kts
-        if [ -f "app/build.gradle.kts" ]; then
-          echo "app/build.gradle.kts content:"
-          cat app/build.gradle.kts
-          echo ""
-          
-          # Check for required sections
-          if grep -q "plugins" app/build.gradle.kts; then
-            echo "✅ plugins section found"
-          fi
-          if grep -q "android" app/build.gradle.kts; then
-            echo "✅ android section found"
-          fi
-          if grep -q "namespace" app/build.gradle.kts; then
-            echo "✅ namespace defined"
-          else
-            echo "❌ namespace NOT defined"
-          fi
-          if grep -q "compileSdk" app/build.gradle.kts; then
-            echo "✅ compileSdk defined"
-          fi
-          if grep -q "minSdk" app/build.gradle.kts; then
-            echo "✅ minSdk defined"
-          fi
-        else
-          echo "❌ app/build.gradle.kts MISSING"
-        fi
-    
-    - name: 🔍 Check resource files
-      run: |
-        echo "========================================="
-        echo "🔍 CHECKING RESOURCE FILES"
-        echo "========================================="
-        
-        # Check strings.xml
-        if [ -f "app/src/main/res/values/strings.xml" ]; then
-          if grep -q "app_name" app/src/main/res/values/strings.xml; then
-            echo "✅ app_name string found"
-          else
-            echo "❌ app_name string MISSING"
-          fi
-        else
-          echo "❌ strings.xml MISSING"
-        fi
-        
-        # Check colors.xml
-        if [ -f "app/src/main/res/values/colors.xml" ]; then
-          echo "✅ colors.xml exists"
-          if grep -q "purple_500" app/src/main/res/values/colors.xml; then
-            echo "  ✅ color definitions found"
-          fi
-        else
-          echo "❌ colors.xml MISSING"
-        fi
-        
-        # Check themes.xml
-        if [ -f "app/src/main/res/values/themes.xml" ]; then
-          echo "✅ themes.xml exists"
-          if grep -q "Theme" app/src/main/res/values/themes.xml; then
-            echo "  ✅ theme definition found"
-          fi
-        else
-          echo "❌ themes.xml MISSING"
-        fi
-    
-    - name: Generate debug keystore
-      run: |
-        echo "========================================="
-        echo="🔑 GENERATING DEBUG KEYSTORE"
-        echo "========================================="
-        keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug, O=Android, C=US"
-        echo "✅ Debug keystore generated"
-    
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    
-    - name: 📊 Run Gradle dependencies check
-      run: |
-        echo "========================================="
-        echo="📊 CHECKING GRADLE DEPENDENCIES"
-        echo "========================================="
-        ./gradlew dependencies --configuration debugRuntimeClasspath 2>&1 | head -50 || true
-    
-    - name: 🔨 Attempt to build (with full error output)
-      id: build
-      continue-on-error: true
-      run: |
-        echo "========================================="
-        echo="🔨 BUILDING APK WITH FULL ERROR OUTPUT"
-        echo "========================================="
-        ./gradlew assembleDebug --stacktrace --info 2>&1 | tee build-output.log
-        BUILD_EXIT_CODE=${PIPESTATUS[0]}
-        echo "BUILD_EXIT_CODE=$BUILD_EXIT_CODE" >> $GITHUB_ENV
-        exit $BUILD_EXIT_CODE
-    
-    - name: 📝 Show build errors if any
-      if: steps.build.outcome == 'failure'
-      run: |
-        echo "========================================="
-        echo="❌ BUILD FAILED - ERRORS DETECTED"
-        echo "========================================="
-        echo ""
-        echo "🔴 ERROR SUMMARY:"
-        echo "-----------------------------------------"
-        grep -E "error:|ERROR:|FAILED:|Exception:|Could not find|Unresolved reference|Unknown" build-output.log | head -20 || echo "No errors captured"
-        echo ""
-        echo "🔴 COMPLETE BUILD LOG:"
-        echo "-----------------------------------------"
-        tail -100 build-output.log
-    
-    - name: 🔍 Check for specific error types
-      if: steps.build.outcome == 'failure'
-      run: |
-        echo "========================================="
-        echo="🔍 ERROR ANALYSIS"
-        echo "========================================="
-        
-        # Check for missing resources
-        if grep -q "resource.*not found" build-output.log; then
-          echo "❌ MISSING RESOURCES:"
-          grep "resource.*not found" build-output.log | head -10
-          echo ""
-          echo "💡 SUGGESTION: Add missing resource files"
-        fi
-        
-        # Check for Kotlin compilation errors
-        if grep -q "Unresolved reference" build-output.log; then
-          echo "❌ KOTLIN COMPILATION ERRORS:"
-          grep "Unresolved reference" build-output.log | head -10
-          echo ""
-          echo "💡 SUGGESTION: Check imports and class names"
-        fi
-        
-        # Check for Manifest errors
-        if grep -q "Manifest" build-output.log && grep -q "error" build-output.log; then
-          echo "❌ MANIFEST ERRORS:"
-          grep -A2 -B2 "Manifest" build-output.log | grep -E "error|Error" | head -10
-          echo ""
-          echo "💡 SUGGESTION: Check AndroidManifest.xml syntax"
-        fi
-        
-        # Check for Gradle configuration errors
-        if grep -q "Could not find method" build-output.log; then
-          echo "❌ GRADLE CONFIGURATION ERRORS:"
-          grep "Could not find method" build-output.log | head -10
-          echo ""
-          echo "💡 SUGGESTION: Check Gradle file syntax"
-        fi
-        
-        # Check for namespace errors
-        if grep -q "namespace" build-output.log && grep -q "error" build-output.log; then
-          echo "❌ NAMESPACE ERROR:"
-          grep -A2 -B2 "namespace" build-output.log | head -10
-          echo ""
-          echo "💡 SUGGESTION: Add namespace to app/build.gradle.kts"
-        fi
-    
-    - name: 📦 List generated files
-      if: steps.build.outcome == 'success'
-      run: |
-        echo "========================================="
-        echo="✅ BUILD SUCCESSFUL!"
-        echo "========================================="
-        echo "📦 Generated APKs:"
-        find app/build -name "*.apk" -type f 2>/dev/null || echo "No APK found"
-        echo ""
-        echo "📁 Build outputs:"
-        ls -la app/build/outputs/ 2>/dev/null || echo "No outputs folder"
+    - name: Build APK
+      run: ./gradlew assembleDebug
     
     - name: Upload APK
-      if: steps.build.outcome == 'success'
       uses: actions/upload-artifact@v4
       with:
         name: app-debug
-        path: |
-          app/build/outputs/apk/debug/*.apk
-          app/build/outputs/apk/*/*.apk
-        if-no-files-found: warn
-        retention-days: 30
-    
-    - name: Upload build logs
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-logs
-        path: build-output.log
-        retention-days: 7
+        path: app/build/outputs/apk/debug/*.apk
