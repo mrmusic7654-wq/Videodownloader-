@@ -36,5 +36,6 @@ android {
 }
 
 dependencies {
+    // Only the essentials - no Material Components
     implementation("androidx.appcompat:appcompat:1.6.1")
 }
